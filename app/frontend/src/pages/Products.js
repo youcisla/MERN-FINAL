@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
 import API from '../services/api';
 
 function ConfirmModal({ open, onClose, onConfirm, message }) {
@@ -9,8 +8,8 @@ function ConfirmModal({ open, onClose, onConfirm, message }) {
       <div className="modal-content">
         <p>{message}</p>
         <div className="modal-actions">
-          <button className="btn-main" onClick={onConfirm}>Confirmer</button>
-          <button className="btn-cancel" onClick={onClose}>Annuler</button>
+          <button className="btn btn-primary btn-main" onClick={onConfirm}>Confirmer</button>
+          <button className="btn btn-secondary btn-cancel" onClick={onClose}>Annuler</button>
         </div>
       </div>
     </div>
@@ -25,6 +24,9 @@ function EditModal({ open, onClose, onSave, product, dark }) {
     category: product?.category || '',
     imageUrl: product?.imageUrl || ''
   });
+
+  const categories = ['Electronics', 'Books', 'Clothing', 'Home', 'Toys']; // Example categories
+
   useEffect(() => {
     setForm({
       name: product?.name || '',
@@ -34,7 +36,9 @@ function EditModal({ open, onClose, onSave, product, dark }) {
       imageUrl: product?.imageUrl || ''
     });
   }, [product]);
+
   if (!open) return null;
+
   return (
     <div className="modal-overlay">
       <div className={`modal-content${dark ? ' dark' : ''}`}> 
@@ -42,12 +46,44 @@ function EditModal({ open, onClose, onSave, product, dark }) {
         <input placeholder="Nom" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className={`input-products${dark ? ' dark' : ''}`} />
         <input placeholder="Description" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className={`input-products${dark ? ' dark' : ''}`} />
         <input type="number" placeholder="Prix" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} className={`input-products${dark ? ' dark' : ''}`} />
-        <input placeholder="Catégorie" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className={`input-products${dark ? ' dark' : ''}`} />
+        <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className={`input-products${dark ? ' dark' : ''}`}>
+          <option value="">Sélectionnez une catégorie</option>
+          {categories.map(cat => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
         <input placeholder="URL de l'image" value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} className={`input-products${dark ? ' dark' : ''}`} />
         <div className="modal-actions">
           <button className="btn-main" onClick={() => onSave(form)}>Enregistrer</button>
           <button className="btn-cancel" onClick={onClose}>Annuler</button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Ensure ProductCard displays the product image
+function ProductCard({ product, onEdit, onDelete, dark }) {
+  return (
+    <div className={`card${dark ? ' dark' : ''}`}>
+      {product.imageFile && (
+        <img
+          src={`http://localhost:5000/uploads/${product.imageFile}`}
+          alt={product.name}
+          className="product-image"
+        />
+      )}
+      <h3>{product.name}</h3>
+      <p>{product.description}</p>
+      <p><b>Prix :</b> {product.price}€</p>
+      <p><b>Catégorie :</b> {product.category}</p>
+      <div className="card-actions">
+        <button className="btn btn-primary btn-edit" onClick={() => onEdit(product)}>
+          Modifier
+        </button>
+        <button className="btn btn-danger btn-delete" onClick={() => onDelete(product._id)}>
+          Supprimer
+        </button>
       </div>
     </div>
   );
@@ -60,25 +96,29 @@ export default function Products({ setToast, dark }) {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
   const limit = 10;
-  const user = JSON.parse(localStorage.getItem('user'));
   const [modal, setModal] = useState({ open: false, prodId: null });
   const [editModal, setEditModal] = useState({ open: false, product: null });
 
-  const fetchProducts = async () => {
-    const params = { page, limit };
-    if (search) params.search = search;
-    if (category) params.category = category;
-    if (minPrice) params.min = minPrice;
-    if (maxPrice) params.max = maxPrice;
-    const res = await API.get('/products', { params });
-    setProducts(res.data.products || res.data);
-    setTotal(res.data.total || 0);
-    if (setToast) setToast('Produits filtrés !', 'success');
-  };
+  const fetchProducts = useCallback(async () => {
+    try {
+      const res = await API.get('/products', {
+        params: {
+          keyword: search,
+          category,
+          min: minPrice,
+          max: maxPrice,
+        },
+      });
+      setProducts(res.data);
+    } catch (err) {
+      setProducts([]);
+    }
+  }, [search, category, minPrice, maxPrice]);
 
-  useEffect(() => { fetchProducts(); }, [search, category, minPrice, maxPrice, page]);
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const handleEdit = (product) => {
     setEditModal({ open: true, product });
@@ -123,11 +163,16 @@ export default function Products({ setToast, dark }) {
       />
       <h2>Produits</h2>
       <div className="filters filters-gradient">
-        <input placeholder="Recherche..." value={search} onChange={e => setSearch(e.target.value)} className={`input-products${dark ? ' dark' : ''}`} />
-        <input placeholder="Catégorie" value={category} onChange={e => setCategory(e.target.value)} className={`input-products${dark ? ' dark' : ''}`} />
-        <input type="number" placeholder="Prix min" value={minPrice} onChange={e => setMinPrice(e.target.value)} className={`input-products${dark ? ' dark' : ''}`} />
-        <input type="number" placeholder="Prix max" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} className={`input-products${dark ? ' dark' : ''}`} />
-        <button onClick={fetchProducts} className={`btn-main${dark ? ' dark' : ''}`}><span role="img" aria-label="filter">🔍</span> Filtrer</button>
+        <input placeholder="Recherche..." value={search} onChange={e => setSearch(e.target.value)} className={`form-control input-products${dark ? ' dark' : ''}`} />
+        <select value={category} onChange={e => setCategory(e.target.value)} className={`form-control input-products${dark ? ' dark' : ''}`}>
+          <option value="">Toutes les catégories</option>
+          {['Electronics', 'Books', 'Clothing', 'Home', 'Toys'].map(cat => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+        <input type="number" placeholder="Prix min" value={minPrice} onChange={e => setMinPrice(e.target.value)} className={`form-control input-products${dark ? ' dark' : ''}`} />
+        <input type="number" placeholder="Prix max" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} className={`form-control input-products${dark ? ' dark' : ''}`} />
+        <button onClick={fetchProducts} className={`btn btn-primary btn-main${dark ? ' dark' : ''}`}><span role="img" aria-label="filter">🔍</span> Filtrer</button>
       </div>
       <div className="products-header">
         <span>Nom</span>
@@ -136,17 +181,17 @@ export default function Products({ setToast, dark }) {
         <span>Modifier</span>
         <span>Supprimer</span>
       </div>
-      <ul>
+      <div className="products-list">
         {products.map(prod => (
-          <li key={prod._id}>
-            <Link to={`/products/${prod._id}`} className={`product-link${dark ? ' dark' : ''}`}><b>{prod.name}</b></Link>
-            <span>{prod.category}</span>
-            <span>{prod.price}€</span>
-            <button className="btn-edit" onClick={() => handleEdit(prod)}><span role="img" aria-label="edit">✏️</span> Modifier</button>
-            <button className="btn-delete" onClick={() => handleDelete(prod._id)}><span role="img" aria-label="delete">🗑️</span> Supprimer</button>
-          </li>
+          <ProductCard
+            key={prod._id}
+            product={prod}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            dark={dark}
+          />
         ))}
-      </ul>
+      </div>
       <div className="pagination">
         <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Précédent</button>
         <span>Page {page}</span>

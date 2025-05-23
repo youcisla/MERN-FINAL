@@ -5,6 +5,7 @@ const productSchema = new mongoose.Schema({
   description: String,
   price: { type: Number, required: true },
   category: { type: String, required: true },
+  imageFile: { type: String }, // Add this field to store the file path or URL
   owner: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User', 

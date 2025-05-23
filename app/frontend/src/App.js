@@ -1,15 +1,15 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
-import Register from './pages/Register';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Products from './pages/Products';
-import ProductDetail from './pages/ProductDetail';
+import React from 'react';
+import { FaBoxOpen, FaSignInAlt, FaSignOutAlt, FaThList, FaUserPlus } from 'react-icons/fa';
+import { Link, Navigate, Route, BrowserRouter as Router, Routes, useNavigate } from 'react-router-dom';
 import './App.css';
 import './index.css';
-import { FaSignOutAlt, FaUserCircle, FaBoxOpen, FaThList, FaSignInAlt, FaUserPlus, FaMoon, FaSun } from 'react-icons/fa';
-import React from 'react';
+import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
+import ProductDetail from './pages/ProductDetail';
+import Products from './pages/Products';
+import Register from './pages/Register';
 
-function Navbar() {
+function Navbar({ dark, setDark }) {
   const isAuthenticated = !!localStorage.getItem('token');
   const navigate = useNavigate();
   return (
@@ -21,7 +21,7 @@ function Navbar() {
       <div className="nav-group">
         {!isAuthenticated && <Link to="/login" className="nav-link"><FaSignInAlt />Connexion</Link>}
         {!isAuthenticated && <Link to="/register" className="nav-link"><FaUserPlus />Inscription</Link>}
-        {isAuthenticated && <button className="logout-btn" onClick={() => {
+        {isAuthenticated && <button className="btn btn-primary logout-btn" onClick={() => {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           navigate('/login');
@@ -33,18 +33,15 @@ function Navbar() {
 
 function Toast({ message, type, onClose }) {
   React.useEffect(() => {
-    const timer = setTimeout(onClose, 3000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-  return <div className={`toast ${type}`}>{message}</div>;
-}
+    if (message && type) {
+      const timer = setTimeout(onClose, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [message, type, onClose]);
 
-function ThemeToggle({ dark, setDark }) {
-  return (
-    <button className={`theme-toggle-btn${dark ? ' dark' : ''}`} onClick={() => setDark(d => !d)} title={dark ? 'Mode clair' : 'Mode sombre'}>
-      <span className="toggle-thumb">{dark ? <FaSun /> : <FaMoon />}</span>
-    </button>
-  );
+  if (!message || !type) return null; // Ensure valid props
+
+  return <div className={`toast ${type}`}>{message}</div>;
 }
 
 export default function App() {
@@ -52,8 +49,13 @@ export default function App() {
   const [toast, setToast] = React.useState(null);
   const [dark, setDark] = React.useState(false);
 
+  // Ensure React.useEffect is not called conditionally
   React.useEffect(() => {
-    document.body.className = dark ? 'dark' : '';
+    if (dark) {
+      document.body.className = 'dark';
+    } else {
+      document.body.className = '';
+    }
   }, [dark]);
 
   React.useEffect(() => {
@@ -62,13 +64,15 @@ export default function App() {
     return () => window.removeEventListener('storage', syncAuth);
   }, []);
 
-  // Affiche une notification toast sur chaque action CRUD
-  const showToast = (msg, type = 'success') => setToast({ message: msg, type });
+  const showToast = (msg, type = 'success') => {
+    if (typeof msg === 'string' && typeof type === 'string') {
+      setToast({ message: msg, type });
+    }
+  };
 
   return (
     <Router>
-      <Navbar />
-      <ThemeToggle dark={dark} setDark={setDark} />
+      <Navbar dark={dark} setDark={setDark} />
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
       <div className={`main-content${dark ? ' dark' : ''}`}>
         <Routes>

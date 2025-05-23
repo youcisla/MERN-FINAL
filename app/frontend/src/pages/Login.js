@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import API from '../services/api';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import API from '../services/api';
 
 export default function Login({ setIsAuthenticated, setToast, dark }) {
   const [form, setForm] = useState({ email: '', password: '' });
@@ -28,10 +28,10 @@ export default function Login({ setIsAuthenticated, setToast, dark }) {
   return (
     <div className={`auth-container login-gradient${dark ? ' dark' : ''}`}>
       <h2>Connexion</h2>
-      <form onSubmit={handleSubmit}>
-        <input name="email" type="email" placeholder="Email" value={form.email} onChange={handleChange} required autoFocus className={`input-login${dark ? ' dark' : ''}`} />
-        <input name="password" type="password" placeholder="Mot de passe" value={form.password} onChange={handleChange} required className={`input-login${dark ? ' dark' : ''}`} />
-        <button type="submit" className={`btn-main btn-login${dark ? ' dark' : ''}`}><span role="img" aria-label="login">🔓</span> Se connecter</button>
+      <form onSubmit={handleSubmit} className="form-group">
+        <input name="email" type="email" placeholder="Email" value={form.email} onChange={handleChange} required autoFocus className="form-control input-login" />
+        <input name="password" type="password" placeholder="Mot de passe" value={form.password} onChange={handleChange} required className="form-control input-login" />
+        <button type="submit" className="btn btn-primary btn-main btn-login"><span role="img" aria-label="login">🔓</span> Se connecter</button>
       </form>
       {error && <div className="error">{error}</div>}
     </div>
