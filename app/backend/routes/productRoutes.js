@@ -28,7 +28,7 @@ router.get('/', getAllProducts);
 router.get('/me', auth, getUserProducts);
 
 // Protected route to create a product with image upload
-router.post('/', auth, upload.single('image'), createProduct);
+router.post('/', auth, upload.single('imageFile'), createProduct);
 
 // Protected and ownership-checked routes for update and delete
 router.put('/:id', auth, checkOwnership, updateProduct);
