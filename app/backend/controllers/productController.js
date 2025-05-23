@@ -14,22 +14,19 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-exports.createProduct = [
-  upload.single('imageFile'), // Middleware to handle file upload
-  async (req, res) => {
-    try {
-      const productData = { ...req.body, owner: req.user.id };
-      if (req.file) {
-        productData.imageFile = req.file.path; // Save file path
-      }
-      const product = new Product(productData);
-      await product.save();
-      res.status(201).json(product);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
+exports.createProduct = async (req, res) => {
+  try {
+    const productData = { ...req.body, owner: req.user.id };
+    if (req.file) {
+      productData.imageFile = req.file.path; // Save file path
     }
+    const product = new Product(productData);
+    await product.save();
+    res.status(201).json(product);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-];
+};
 
 exports.getUserProducts = async (req, res) => {
   try {
@@ -67,9 +64,15 @@ exports.getAllProducts = async (req, res) => {
 exports.updateProduct = async (req, res) => {
   try {
     const product = await Product.findOne({ _id: req.params.id, owner: req.user.id });
-    if (!product) return res.status(404).json({ msg: 'Produit non trouvé' });
+    if (!product) {
+      return res.status(404).json({ error: 'Produit non trouvé ou accès refusé' });
+    }
 
     Object.assign(product, req.body);
+    if (req.file) {
+      product.imageFile = req.file.path;
+    }
+
     await product.save();
     res.json(product);
   } catch (err) {
@@ -80,9 +83,11 @@ exports.updateProduct = async (req, res) => {
 exports.deleteProduct = async (req, res) => {
   try {
     const product = await Product.findOneAndDelete({ _id: req.params.id, owner: req.user.id });
-    if (!product) return res.status(404).json({ msg: 'Produit non trouvé' });
+    if (!product) {
+      return res.status(404).json({ error: 'Produit non trouvé ou accès refusé' });
+    }
 
-    res.json({ msg: 'Produit supprimé' });
+    res.json({ message: 'Produit supprimé avec succès' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

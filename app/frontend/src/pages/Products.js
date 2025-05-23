@@ -64,11 +64,14 @@ function EditModal({ open, onClose, onSave, product, dark }) {
 
 // Ensure ProductCard displays the product image
 function ProductCard({ product, onEdit, onDelete, dark }) {
+  // Sanitize the image source to prevent XSS
+  const sanitizedImageSrc = encodeURI(`http://localhost:5000/uploads/${product.imageFile}`);
+
   return (
     <div className={`card${dark ? ' dark' : ''}`}>
       {product.imageFile && (
         <img
-          src={`http://localhost:5000/uploads/${product.imageFile}`}
+          src={sanitizedImageSrc}
           alt={product.name}
           className="product-image"
         />
@@ -88,6 +91,24 @@ function ProductCard({ product, onEdit, onDelete, dark }) {
     </div>
   );
 }
+
+// Updated styles for better alignment and card layout
+const cardStyle = {
+  border: '1px solid #ccc',
+  borderRadius: '8px',
+  padding: '16px',
+  margin: '8px',
+  textAlign: 'center',
+  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+  backgroundColor: '#fff',
+};
+
+const gridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+  gap: '16px',
+  padding: '16px',
+};
 
 export default function Products({ setToast, dark }) {
   const [products, setProducts] = useState([]);
@@ -147,7 +168,7 @@ export default function Products({ setToast, dark }) {
   };
 
   return (
-    <div className={`products-container${dark ? ' dark' : ''}`}>
+    <div className={`products-container`}>
       <EditModal
         open={editModal.open}
         onClose={() => setEditModal({ open: false, product: null })}
@@ -161,7 +182,7 @@ export default function Products({ setToast, dark }) {
         onConfirm={confirmDelete}
         message="Voulez-vous vraiment supprimer ce produit ?"
       />
-      <h2>Produits</h2>
+      <h2 className="text-center mb-4">Tous les produits</h2>
       <div className="filters filters-gradient">
         <input placeholder="Recherche..." value={search} onChange={e => setSearch(e.target.value)} className={`form-control input-products${dark ? ' dark' : ''}`} />
         <select value={category} onChange={e => setCategory(e.target.value)} className={`form-control input-products${dark ? ' dark' : ''}`}>
@@ -181,16 +202,20 @@ export default function Products({ setToast, dark }) {
         <span>Modifier</span>
         <span>Supprimer</span>
       </div>
-      <div className="products-list">
-        {products.map(prod => (
-          <ProductCard
-            key={prod._id}
-            product={prod}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            dark={dark}
-          />
-        ))}
+      <div style={gridStyle}>
+        {products.map(prod => {
+          // Sanitize the image source to prevent XSS
+          const sanitizedImageSrc = encodeURI(`http://localhost:5000/uploads/${prod.imageFile}`);
+
+          return (
+            <div key={prod._id} style={cardStyle}>
+              <img src={sanitizedImageSrc} alt={prod.name} className="product-image" />
+              <h3>{prod.name}</h3>
+              <p>{prod.description}</p>
+              <p>{prod.price}€</p>
+            </div>
+          );
+        })}
       </div>
       <div className="pagination">
         <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Précédent</button>

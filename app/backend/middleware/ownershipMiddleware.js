@@ -1,18 +1,22 @@
 const Product = require('../models/Product');
 
-const verifyOwnership = async (req, res, next) => {
+// Middleware to check if the logged-in user owns the product
+const checkOwnership = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id);
+
     if (!product) {
-      return res.status(404).json({ msg: 'Produit non trouvé' });
+      return res.status(404).json({ message: 'Produit non trouvé' });
     }
-    if (product.owner.toString() !== req.user.id) {
-      return res.status(403).json({ msg: 'Accès refusé, vous n\'êtes pas le propriétaire' });
+
+    if (product.user.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Accès refusé : Vous ne pouvez pas modifier ou supprimer ce produit' });
     }
+
     next();
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
-module.exports = verifyOwnership;
+module.exports = { checkOwnership };

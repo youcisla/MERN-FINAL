@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import API from '../services/api';
 
 function ConfirmModal({ open, onClose, onConfirm, message }) {
@@ -137,8 +136,26 @@ export default function Dashboard({ setToast, dark }) {
     if (setToast) setToast('Produit supprimé !', 'success');
   };
 
+  // Updated styles for better alignment and card layout
+  const cardStyle = {
+    border: '1px solid #ccc',
+    borderRadius: '8px',
+    padding: '16px',
+    margin: '8px',
+    textAlign: 'center',
+    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+    backgroundColor: '#fff',
+  };
+
+  const gridStyle = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '16px',
+    padding: '16px',
+  };
+
   return (
-    <div className="dashboard-container container mt-4">
+    <div className={`dashboard-container${dark ? ' dark' : ''}`}>
       <ConfirmModal
         open={modal.open}
         onClose={() => setModal({ open: false, prodId: null })}
@@ -232,31 +249,28 @@ export default function Dashboard({ setToast, dark }) {
         </div>
       </form>
       {error && <div className="alert alert-danger">{error}</div>}
-      <ul className="list-group">
-        {products.map((prod) => (
-          <li key={prod._id} className="list-group-item d-flex justify-content-between align-items-center">
-            <Link to={`/products/${prod._id}`} className={`product-link${dark ? ' text-light' : ''}`}>
-              <b>{prod.name}</b>
-            </Link>
-            <span>{prod.category} - {prod.price}€</span>
-            <div>
-              <button className="btn btn-warning me-2" onClick={() => handleEdit(prod._id)}>
-                <span role="img" aria-label="edit">✏️</span> Modifier
-              </button>
-              <button className="btn btn-danger" onClick={() => handleDelete(prod._id)}>
-                <span role="img" aria-label="delete">🗑️</span> Supprimer
-              </button>
-            </div>
-            {prod.imageFile && (
+      <div style={gridStyle}>
+        {products.map((product) => {
+          // Sanitize the image source to prevent XSS
+          const sanitizedImageSrc = encodeURI(`http://localhost:5000/uploads/${product.imageFile}`);
+          return (
+            <div key={product._id} style={cardStyle}>
               <img
-                src={`http://localhost:5000/uploads/${prod.imageFile}`}
-                alt={prod.name}
-                className="product-image"
+                src={sanitizedImageSrc}
+                alt={product.name}
+                className="dashboard-product-image"
+                style={{ maxWidth: '100%', maxHeight: '150px', objectFit: 'cover' }}
               />
-            )}
-          </li>
-        ))}
-      </ul>
+              <h3>{product.name}</h3>
+              <p>{product.description}</p>
+              <p><b>Prix:</b> {product.price}€</p>
+              <p><b>Catégorie:</b> {product.category}</p>
+              <button className="btn btn-primary" onClick={() => handleEdit(product._id)}>Modifier</button>
+              <button className="btn btn-danger" onClick={() => handleDelete(product._id)}>Supprimer</button>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
